@@ -1,5 +1,6 @@
 #include "serial-port.h"
 
+#include <cstring>
 #include <stdexcept>
 
 #include <fcntl.h>
