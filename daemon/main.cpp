@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "serial-port.h"
+
 namespace
 {
 	const std::string logFilePath = "/var/log/avr-command-daemon";
@@ -22,7 +24,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// Open the port to check if all correct.
+	auto avrChannel = utilities::SerialPort(argv[1], 115200, 0, false); 
 
 	auto myPid = fork();
 	if (myPid == -1)
