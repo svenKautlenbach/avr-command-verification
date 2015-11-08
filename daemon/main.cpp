@@ -12,6 +12,8 @@
 namespace
 {
 	const std::string logFilePath = "/var/log/avr-command-daemon";
+	const std::vector<uint8_t> avrConfirmPacket = {'Y'};
+	const std::vector<uint8_t> avrDenyPacket = {'0'};
 }
 
 int main(int argc, char* argv[])
@@ -19,12 +21,12 @@ int main(int argc, char* argv[])
 	if (argc != 2)
 	{
 		std::cout << "Usage:" << std::endl
-			<< argv[0] << " [avr serial port]" << std::endl;
+			<< "sudo " << argv[0] << " [avr serial port]" << std::endl;
 
 		return 1;
 	}
 
-	auto avrChannel = utilities::SerialPort(argv[1], 115200, 0, false); 
+	auto avrChannel = utilities::SerialPort(argv[1], 115200); 
 
 	auto myPid = fork();
 	if (myPid == -1)
@@ -50,9 +52,9 @@ int main(int argc, char* argv[])
 
 	umask(0);
 	auto mySessionId = setsid();
-	if (mySessionId != myPid)
+	if (mySessionId == -1)
 	{
-		log << "The Session ID " << mySessionId << " does not match the PID - " << std::strerror(errno) << std::endl
+		log << "Setting session ID resulted in error - " << std::strerror(errno) << std::endl
 			<< "Exiting..." << std::endl;
 		return 2;
 	}
@@ -61,11 +63,29 @@ int main(int argc, char* argv[])
 	{
 		log << "Could not change the working directory - " << std::strerror(errno) << std::endl
 			<< "Exiting..." << std::endl;
+		return 3;
 	}
 
 	while (1)
 	{
+		static bool confirmed = false;
 		sleep(1);
+		
+		if (avrChannel.dataAvailable() == 0)
+			continue;
+
+		auto avrCommandRequest = avrChannel.read();
+		log << "Got from AVR: " << std::string(reinterpret_cast<char*>(avrCommandRequest.data()), avrCommandRequest.size()) << std::endl;
+		if (confirmed)
+		{
+			avrChannel.write(avrConfirmPacket);
+		}
+		else
+		{
+			avrChannel.write(avrDenyPacket);
+		}
+
+		confirmed = (confirmed ? false : true);
 	}
 
 	return 666;

@@ -9,7 +9,7 @@ namespace utilities
 	class SerialPort
 	{
 	public:
-		SerialPort(const std::string& device, int baud, int parity, bool doesBlock);
+		SerialPort(const std::string& device, int baud);
 
 		void write(const std::vector<uint8_t>& data);
 		size_t dataAvailable();
@@ -20,8 +20,7 @@ namespace utilities
 	private:
 		static int getTermiosSpeed(int baud);
 
-		void writeData(const uint8_t* data, size_t length);
-		bool initialize(int baud, int parity, bool doesBlock);
+		bool initialize(int baud);
 
 		int m_fileDescriptor;
 	};
