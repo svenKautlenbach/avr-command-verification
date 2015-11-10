@@ -35,7 +35,7 @@ namespace utilities
 		auto requestBody = request.str();
 		auto requestLength = requestBody.length();
 		auto sendResult = send(socketDescriptor, requestBody.c_str(), requestLength, 0);
-		if (sendResult != requestLength)
+		if (sendResult != static_cast<ssize_t>(requestLength))
 		{
 			close(socketDescriptor);
 			return false;
