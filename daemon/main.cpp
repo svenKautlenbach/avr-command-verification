@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "rest-validation.h"
 #include "serial-port.h"
 
 namespace
@@ -19,15 +20,21 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	if (argc != 2)
+	if (argc != 3)
 	{
 		std::cout << "Usage:" << std::endl
-			<< "sudo " << argv[0] << " [avr serial port]" << std::endl;
+			<< "sudo " << argv[0] << " [avr serial port] [validation server url/ip]" << std::endl;
 
 		return 1;
 	}
 
 	auto avrChannel = utilities::SerialPort(argv[1], 115200); 
+	auto validationTest = utilities::RestValidation(argv[2]);
+	if (validationTest.verifyAction(0, "") == false)
+	{
+		std::cout << "Got failed request." << std::endl;
+		return 23;
+	}
 
 	auto myPid = fork();
 	if (myPid == -1)
@@ -69,15 +76,24 @@ int main(int argc, char* argv[])
 
 	while (1)
 	{
-		static bool confirmed = false;
 		sleep(1);
 		
 		if (avrChannel.dataAvailable() == 0)
+		{
 			continue;
+		}
 
 		auto avrCommandRequest = avrChannel.read();
-		log << "Got from AVR: " << std::string(reinterpret_cast<char*>(avrCommandRequest.data()), avrCommandRequest.size()) << std::endl;
-		if (confirmed)
+		
+		// Do not deal with a case where data might be clogged by multiple requests, so press responsively.
+		int16_t deviceId;
+		memcpy(&deviceId, avrCommandRequest.data(), 2);
+		std::string command(reinterpret_cast<char*>(avrCommandRequest.data() + 2), avrCommandRequest.size() - 2);
+		
+		log << "Got from ID " << deviceId << " command " << command << std::endl;
+		
+		auto validationEntity = utilities::RestValidation("www.google.ee");
+		if (validationEntity.verifyAction(deviceId, command))
 		{
 			avrChannel.write(avrConfirmPacket);
 		}
@@ -85,8 +101,6 @@ int main(int argc, char* argv[])
 		{
 			avrChannel.write(avrDenyPacket);
 		}
-
-		confirmed = (confirmed ? false : true);
 	}
 
 	return 666;
