@@ -1,6 +1,8 @@
 #include <cstring>
+#include <exception>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include <errno.h>
@@ -14,8 +16,8 @@
 namespace
 {
 	const std::string logFilePath = "/var/log/avr-command-daemon";
-	const std::vector<uint8_t> avrConfirmPacket = {'Y'};
-	const std::vector<uint8_t> avrDenyPacket = {'0'};
+	const std::vector<uint8_t> avrConfirmPacket = {1};
+	const std::vector<uint8_t> avrDenyPacket = {0};
 }
 
 int main(int argc, char* argv[])
@@ -28,14 +30,6 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	auto avrChannel = utilities::SerialPort(argv[1], 115200); 
-	auto validationTest = utilities::RestValidation(argv[2]);
-	if (validationTest.verifyAction(0, "") == false)
-	{
-		std::cout << "Got failed request." << std::endl;
-		return 23;
-	}
-
 	auto myPid = fork();
 	if (myPid == -1)
 	{
@@ -45,6 +39,7 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
+	// Parent exit.
 	if (myPid != 0)
 	{
 		return 0;
@@ -74,33 +69,55 @@ int main(int argc, char* argv[])
 		return 3;
 	}
 
-	while (1)
+	try
 	{
-		sleep(1);
+		auto avrChannel = utilities::SerialPort(argv[1], 115200); 
+		auto validationEntity = utilities::RestValidation(argv[2]);
 		
-		if (avrChannel.dataAvailable() == 0)
+		while (1)
 		{
-			continue;
-		}
+			sleep(1);
 
-		auto avrCommandRequest = avrChannel.read();
-		
-		// Do not deal with a case where data might be clogged by multiple requests, so press responsively.
-		int16_t deviceId;
-		memcpy(&deviceId, avrCommandRequest.data(), 2);
-		std::string command(reinterpret_cast<char*>(avrCommandRequest.data() + 2), avrCommandRequest.size() - 2);
-		
-		log << "Got from ID " << deviceId << " command " << command << std::endl;
-		
-		auto validationEntity = utilities::RestValidation("www.google.ee");
-		if (validationEntity.verifyAction(deviceId, command))
-		{
-			avrChannel.write(avrConfirmPacket);
+			if (avrChannel.dataAvailable() == 0)
+			{
+				continue;
+			}
+
+			auto avrCommandRequest = avrChannel.read();
+
+			// Does not deal with a case where data might be clogged by multiple requests, so press responsively.
+			int16_t deviceId;
+			memcpy(&deviceId, avrCommandRequest.data(), 2);
+			std::string command(reinterpret_cast<char*>(avrCommandRequest.data() + 2), avrCommandRequest.size() - 2);
+
+			log << "Got from ID " << deviceId << " command " << command << std::endl;
+
+			if (validationEntity.verifyAction(deviceId, command))
+			{
+				log << "Request was success" << std::endl;
+				avrChannel.write(avrConfirmPacket);
+			}
+			else
+			{
+				log << "Request denied" << std::endl;
+				avrChannel.write(avrDenyPacket);
+			}
 		}
-		else
-		{
-			avrChannel.write(avrDenyPacket);
-		}
+	}
+	catch (const std::runtime_error& e)
+	{
+		log << "Caught runtime error - " << e.what() << std::endl << "Daemon exits." << std::endl;
+		return 4;
+	}
+	catch (const std::exception& e)
+	{
+		log << "Caught exception - " << e.what() << std::endl << "Daemon exits." << std::endl;
+		return 5;
+	}
+	catch (...)
+	{
+		log << "Caught unknown type. Daemon exits" << std::endl;
+		return 6;
 	}
 
 	return 666;

@@ -17,6 +17,9 @@ namespace utilities
 
 	private:
 		int connectToServer();
+		// Parses the server HTTP result code, based on which the decision is done.
+		// 200 - valid, 403 - invalid.
+		bool isActionValid(const std::string& response);
 
 		std::string m_url;
 	};

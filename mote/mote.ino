@@ -95,5 +95,5 @@ static bool validateCommand(String name)
 	while (Serial.readBytes(&response, 1) == 0);
 
 	// Response 0x01 means OK, everything else is no confirmation.
-	return (response == 'Y');
+	return (response == 1);
 }

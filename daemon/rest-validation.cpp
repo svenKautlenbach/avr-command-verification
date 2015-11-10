@@ -14,14 +14,10 @@
 
 namespace utilities
 {
-	RestValidation::RestValidation(const std::string& url) : m_url(url)
-	{
-	}
+	RestValidation::RestValidation(const std::string& url) : m_url(url) {}
 
 	bool RestValidation::verifyAction(int16_t deviceId, const std::string& command)
 	{
-		static bool result = false;
-
 		(void)deviceId;
 		(void)command;
 
@@ -33,35 +29,39 @@ namespace utilities
 		}
 
 		std::ostringstream request;
-		request << "GET /category HTTP/1.0\r\n"
-			<< "User-Agent: HTMLGET1.0\r\n"
-			<< "Host: " << m_url << "\r\n";
+		request << "GET / HTTP/1.0\r\n"
+			<< "Host: " << m_url << "\r\n\r\n";
 
 		auto requestBody = request.str();
 		auto requestLength = requestBody.length();
-		std::cout << requestBody;
-		auto writeResult = write(socketDescriptor, requestBody.c_str(), requestLength);
-		if (writeResult != requestLength)
+		auto sendResult = send(socketDescriptor, requestBody.c_str(), requestLength, 0);
+		if (sendResult != requestLength)
 		{
-			std::cout << "Write failed." << std::endl;
 			close(socketDescriptor);
 			return false;
 		}
 
-		char response[1000];
-		auto readResult = read(socketDescriptor, response, 1000);
-		if (readResult <= 0)
+		std::ostringstream response;
+		ssize_t receiveResult;
+		do
 		{
-			std::cout << "Read returned " << readResult << " " << strerror(errno) << std::endl;
-			close(socketDescriptor);
-			return false;
+			char responseBuffer[1001];
+			receiveResult = recv(socketDescriptor, responseBuffer, 1000, 0);
+			if (receiveResult == -1)
+			{
+				close(socketDescriptor);
+				return false;
+			}
+			
+			responseBuffer[receiveResult] = '\0';
+			response << responseBuffer;
 		}
+		while (receiveResult > 0);
+		response << std::endl;
 
-		std::cout << "HTTP GET result:" << std::endl << response;
+		close(socketDescriptor);
 
-		result = (result ? false : true);
-
-		return result;
+		return isActionValid(response.str());
 	}
 
 	int RestValidation::connectToServer()
@@ -76,8 +76,6 @@ namespace utilities
 		{
 			throw std::runtime_error("Cannot stringify the host IP for " + m_url);
 		}
-
-		std::cout << m_url << " ip " << hostIp << std::endl;
 
 		auto socketDescriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (socketDescriptor == -1)
@@ -99,5 +97,16 @@ namespace utilities
 		
 		close(socketDescriptor);
 		return -1;
+	}
+
+	bool RestValidation::isActionValid(const std::string& response)
+	{
+		auto statusCodePosition = response.find(" ") + 1;
+		auto statusCode = response.substr(statusCodePosition, 3);
+
+		std::cout << "HTTP result code " << statusCode << std::endl;
+
+		// Although in theory the request returns 403 for invalid action, everything but 200 is treated invalid.
+		return (statusCode == "200");
 	}
 }
