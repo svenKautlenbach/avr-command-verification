@@ -24,6 +24,6 @@ make
 ```
 Usage:</BR>
 ```
-sudo ./avr-command-daemon [serial port]
+sudo ./avr-command-daemon [serial port] [validation server url/ip]
 ```
 Daemon has log in the `/var/log/avr-command-daemon`
