@@ -29,8 +29,8 @@ namespace utilities
 		}
 
 		std::ostringstream request;
-		request << "GET / HTTP/1.0\r\n"
-			<< "Host: " << m_url << "\r\n\r\n";
+		request << "POST / HTTP/1.0\r\n\r\n"
+			<< "{\"id\":" << deviceId << ", \"cmd\":\"" << command << "\"}" << std::endl;
 
 		auto requestBody = request.str();
 		auto requestLength = requestBody.length();
@@ -84,7 +84,7 @@ namespace utilities
 		struct sockaddr_in socketAddress = {};
 		socketAddress.sin_family = AF_INET;
 		memcpy(&(socketAddress.sin_addr.s_addr), host->h_addr, host->h_length);
-		socketAddress.sin_port = htons(80);
+		socketAddress.sin_port = htons(3000); // Localhost verification served via this port.
 
 		// Lets set 10 seconds timeout for sending and receiving.
 		struct timeval timeout = {10, 0};
