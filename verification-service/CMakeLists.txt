@@ -10,4 +10,9 @@ include_directories (
 file(GLOB SOURCES "main.cpp")
 
 add_executable(whitelist-verify ${SOURCES})
-target_link_libraries(whitelist-verify ${PROJECT_SOURCE_DIR}/libjson11.a)
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries(whitelist-verify ${PROJECT_SOURCE_DIR}/libjson11GNU.a)
+#ELSE
+#target_link_libraries(whitelist-verify ${PROJECT_SOURCE_DIR}/libjson11.a)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

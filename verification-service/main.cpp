@@ -16,7 +16,7 @@ namespace
 
 	const std::string whitelistFilePath = "whitelist.conf";
 
-	std::ofstream log("verification.log", std::ios::app);
+	std::ofstream logDebug("verification.log", std::ios::app);
 }
 
 static bool isConfiguredInWhitelist(int16_t deviceId, const std::string& command);
@@ -42,29 +42,29 @@ int main(int argc, char* argv[])
 		auto avrVerificationJson = json11::Json::parse(jsonRequest, jsonParseError);
 		if (!jsonParseError.empty())
 		{
-			log << "JSON request parsing error for - " << jsonRequest << std::endl << jsonParseError << std::endl;
+			logDebug << "JSON request parsing error for - " << jsonRequest << std::endl << jsonParseError << std::endl;
 			sendFailure();
 			return 0;
 		}
 
-		log << "Verifying " << jsonRequest << std::endl; 
+		logDebug << "Verifying " << jsonRequest << std::endl; 
 		if (isConfiguredInWhitelist(avrVerificationJson["id"].int_value(), avrVerificationJson["cmd"].string_value()))
 		{
-			log << "Success" << std::endl;
+			logDebug << "Success" << std::endl;
 			sendSuccess();
 			return 0;
 		}
 	}
 	catch (const std::exception& e)
 	{
-		log << "There was exception raised - " << e.what() << std::endl;
+		logDebug << "There was exception raised - " << e.what() << std::endl;
 	}
 	catch (...)
 	{
-		log << "There was unknown throwed object" << std::endl;	
+		logDebug << "There was unknown throwed object" << std::endl;	
 	}
 
-	log << "Failure" << std::endl;
+	logDebug << "Failure" << std::endl;
 	sendFailure();
 
 	return 0;
@@ -77,7 +77,7 @@ static std::map<int16_t, std::vector<std::string>> parseWhitelist()
 	std::ifstream inputFile(whitelistFilePath);
 	if (!inputFile.is_open() || inputFile.fail())
 	{
-		log << "Failed to open the whitelist file" << std::endl;
+		logDebug << "Failed to open the whitelist file" << std::endl;
 		return whitelistEntries;
 	}
 
