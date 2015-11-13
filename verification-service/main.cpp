@@ -16,49 +16,38 @@ namespace
 
 	const std::string whitelistFilePath = "whitelist.conf";
 
-	std::ofstream log("verification.log");
+	std::ofstream log("verification.log", std::ios::app);
 }
 
 static bool isConfiguredInWhitelist(int16_t deviceId, const std::string& command);
 
 int main(int argc, char* argv[])
 {
-	std::string httpVersion;
-	auto sendSuccess = [&]() -> void 
+	auto sendSuccess = []() -> void 
 	{
-		std::cout << httpVersion << " " << verificationSuccessResponse << "\r\n";
+		std::cout << "HTTP/1.0 " << verificationSuccessResponse << "\r\n";
 	};
 
-	auto sendFailure = [&]() -> void
+	auto sendFailure = []() -> void
 	{
-		std::cout << httpVersion << " " << verificationFailedResponse << "\r\n";
+		std::cout << "HTTP/1.0 " << verificationFailedResponse << "\r\n";
 	};	
-	
+
 	try
 	{
-		// Parse the HTTP version, so that later same version is used in the response.
-		// No check is done if it is a POST, which should be used according to the spec.
-		// Also the path is discarded.
-		std::string requestHeaderMethod;
-		std::getline(std::cin, requestHeaderMethod);
-		httpVersion = requestHeaderMethod.substr(requestHeaderMethod.length() - 9, 8); // The length of the HTTP/1.x equals 8.	
-
-		std::string request;
-		// Parses the request until the last line - that is where the JSON data resides.
-		// Also does not check the HTTP headers, since it is not directly
-		// relevant for comparing the AVR request against the whitelist.
-		while (std::getline(std::cin, request).peek() != EOF);
+		std::string jsonRequest;
+		std::getline(std::cin, jsonRequest);
 
 		std::string jsonParseError;
-		auto avrVerificationJson = json11::Json::parse(request, jsonParseError);
+		auto avrVerificationJson = json11::Json::parse(jsonRequest, jsonParseError);
 		if (!jsonParseError.empty())
 		{
-			log << "Request parsing error for - " << request << std::endl << jsonParseError << std::endl;
+			log << "JSON request parsing error for - " << jsonRequest << std::endl << jsonParseError << std::endl;
 			sendFailure();
 			return 0;
 		}
 
-		log << "Verifying " << request << std::endl; 
+		log << "Verifying " << jsonRequest << std::endl; 
 		if (isConfiguredInWhitelist(avrVerificationJson["id"].int_value(), avrVerificationJson["cmd"].string_value()))
 		{
 			log << "Success" << std::endl;
@@ -74,7 +63,7 @@ int main(int argc, char* argv[])
 	{
 		log << "There was unknown throwed object" << std::endl;	
 	}
-	
+
 	log << "Failure" << std::endl;
 	sendFailure();
 
@@ -94,12 +83,14 @@ static std::map<int16_t, std::vector<std::string>> parseWhitelist()
 
 	std::string entry;
 	// Parse the lines from the file.
+	// Example of one configuration line:
+	// device:<int16> command:<name>;<name2>;
 	while (std::getline(inputFile, entry).eof() == false)
 	{
-		// Parse the donfiguration entry fields - device and command. 
+		// Parse the configuration entry fields - device and command. 
 		std::stringstream entryFeed(entry);
 
-		// Shady things can happen here if whitelist is not formatted correctly.
+		// Shady things can happen here if the whitelist is not formatted correctly.
 		std::string deviceIdSpecifier;
 		std::string deviceIdString;
 		std::getline(entryFeed, deviceIdSpecifier, ':');

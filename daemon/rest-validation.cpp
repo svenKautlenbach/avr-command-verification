@@ -10,17 +10,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <iostream>
-
 namespace utilities
 {
 	RestValidation::RestValidation(const std::string& url) : m_url(url) {}
 
 	bool RestValidation::verifyAction(int16_t deviceId, const std::string& command)
 	{
-		(void)deviceId;
-		(void)command;
-
 		auto socketDescriptor = connectToServer();
 
 		if (socketDescriptor == -1)
@@ -55,7 +50,7 @@ namespace utilities
 				close(socketDescriptor);
 				return false;
 			}
-			
+
 			responseBuffer[receiveResult] = '\0';
 			response << responseBuffer;
 		}
@@ -106,9 +101,7 @@ namespace utilities
 	{
 		auto statusCodePosition = response.find(" ") + 1;
 		auto statusCode = response.substr(statusCodePosition, 3);
-
-		std::cout << "HTTP result code " << statusCode << std::endl;
-
+		
 		// Although in theory the request returns 403 for invalid action, everything but 200 is treated invalid.
 		return (statusCode == "200");
 	}

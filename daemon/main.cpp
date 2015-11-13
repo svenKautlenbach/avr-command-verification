@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	{
 		auto avrChannel = utilities::SerialPort(argv[1], 115200); 
 		auto validationEntity = utilities::RestValidation(argv[2]);
-		
+
 		while (1)
 		{
 			sleep(1);

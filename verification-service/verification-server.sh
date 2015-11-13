@@ -4,21 +4,23 @@ trap "rm -f netcat-channel" EXIT
 while true
 do
 	cat netcat-channel | nc -l 3000 > >( # Here starts the netcat parser.
-	export REQUEST=
+	export REQUEST_PATH=
 	while read line
 	do
 		line=$(echo "$line" | tr -d '[\r\n]')
-
 		if echo "$line" | grep -qE '^POST /' # Only "POST /" are served.
 		then
-			REQUEST=$(echo "$line" | cut -d ' ' -f2) # The request data.
-		elif [ "x$line" = x ] # Empty line or EOF.
+			REQUEST_PATH=$(echo "$line" | cut -d ' ' -f2) # Extract the request path.
+		fi
+
+		if echo "$line" | grep -qE 'id' # Contains id keyword in the line, which is part of the JSON.
 		then
-			if echo $REQUEST | grep -qE '^/'
+			if echo $REQUEST_PATH | grep -qE '^/'
 			then
-				echo $REQUEST | ./whitelist-verify > netcat-channel
+				echo "$line" | ./whitelist-verify > netcat-channel
 			else
 				echo "Broken request"
+				echo $REQUEST_PATH
 			fi
 		fi
 	done
