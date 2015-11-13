@@ -52,7 +52,7 @@ printf "{\"id\":-22719, \"cmd\":\"BTN1\"}" | ./whitelist-verify
 ```
 
 **Notes**</BR>
-The JSON library ```libjson11.a``` is pre-compiled as a static library for x86_64 platforms. If different platform is needed, then check the credits and replace the library included with the repository.
+The JSON library ```libjson11<TOOLCHAIN>.a``` is pre-compiled as a static library for x86_64 platforms. There are versions each for LLVM(Mac OS X) and GNU(Linux) toolchains. If different platform-toolchain combination is needed, then check the credits and replace the library included with the repository. Also remove the conditional link statements at the end of the [CMakeLists.txt](https://github.com/svenKautlenbach/avr-command-verification/blob/master/verification-service/CMakeLists.txt)
 
 #### Credits
 [json11](https://github.com/dropbox/json11) parser is used dealing with the JSON data.
