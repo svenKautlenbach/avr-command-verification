@@ -1,2 +1,4 @@
 daemon/build
 verification-service/build
+verification-service/verification.log
+verification-service/whitelist-verify

@@ -1,4 +1,4 @@
-#include "rest-validation.h"		
+#include "rest-validation.h"	
 
 #include <cstring>
 #include <ctime>
@@ -29,7 +29,10 @@ namespace utilities
 		}
 
 		std::ostringstream request;
-		request << "POST / HTTP/1.0\r\n\r\n"
+		request << "POST / HTTP/1.0\r\n"
+			<< "Content-type: application/json\r\n"
+			<< "Host: " << m_url << "\r\n"
+			<< "Accept: application/json\r\n\r\n"
 			<< "{\"id\":" << deviceId << ", \"cmd\":\"" << command << "\"}" << std::endl;
 
 		auto requestBody = request.str();
@@ -91,10 +94,10 @@ namespace utilities
 		setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 		setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
-		// If setting up TCP session fails, invalid socket is returned.
+		// If setting up the TCP session fails, invalid socket is returned.
 		if (connect(socketDescriptor, reinterpret_cast<struct sockaddr*>(&socketAddress), sizeof(socketAddress)) == 0)
 			return socketDescriptor;
-		
+
 		close(socketDescriptor);
 		return -1;
 	}

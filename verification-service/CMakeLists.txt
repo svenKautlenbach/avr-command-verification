@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.2.2)
-project (avr-whitelist-verification)
+project (whitelist-verification)
 
-set (CMAKE_CXX_FLAGS "-Wall -Werror -std=gnu++11")
+set (CMAKE_CXX_FLAGS "-Wall -Werror -std=c++11")
 
 include_directories (
 	"${PROJECT_SOURCE_DIR}"
@@ -9,4 +9,5 @@ include_directories (
 
 file(GLOB SOURCES "main.cpp")
 
-add_executable(avr-whitelist-verify ${SOURCES})
+add_executable(whitelist-verify ${SOURCES})
+target_link_libraries(whitelist-verify ${PROJECT_SOURCE_DIR}/libjson11.a)
