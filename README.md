@@ -43,7 +43,7 @@ cp build/whitelist-verify .
 sudo bash verification-server.sh &
 ```
 Working principles:</BR>
-**verification-server.sh** script contains infinity loop which starts the netcat and feeds its data to the **whitelist-verify** binary which in turn outputs the HTTP response where latter is piped inside the script back to the netcat. Binary does its verification based on the **whitelist.conf** file, where different devices and their actions are specified ([see the file included with the repository](www.neti.ee)). The format of the configuration file has custom human-readable format. One must notice that the server script, verification binary and the whitelist configuration shall reside in the same folder.
+**verification-server.sh** script contains infinity loop which starts the netcat and feeds its data to the **whitelist-verify** binary which in turn outputs the HTTP response where latter is piped inside the script back to the netcat. Binary does its verification based on the **whitelist.conf** file, where different devices and their actions are specified ([see the file included with the repository](https://github.com/svenKautlenbach/avr-command-verification/blob/master/verification-service/whitelist.conf)). The format of the configuration file has custom human-readable format. One must notice that the server script, verification binary and the whitelist configuration shall reside in the same folder.
 
 Whitelist verification can be separately tested on the command line too. It simply reads the request via standard input(```STDIN/cin```) and outputs the response to standard output (```STDOUT/cout```). For the debugging purposes it creates the logfile called **verification.log** in the same folder where the binary is being run.</BR>
 Example:</BR>
